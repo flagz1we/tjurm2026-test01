@@ -1,13 +1,22 @@
 #include "tests.h"
+#include<iostream>
+#include<cstring>
+using namespace std;
 
 // 练习1，实现库函数strlen
 int my_strlen(char *str) {
     /**
      * 统计字符串的长度。
      */
+    int a = 0;
+    while(*str != '\0')
+    {
+        str++;
+        a++;
+    }
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    return a;
 }
 
 
@@ -17,10 +26,20 @@ void my_strcat(char *str_1, char *str_2) {
      * 将字符串str_2拼接到str_1之后，我们保证str_1指向的内存空间足够用于添加str_2。
      * 注意结束符'\0'的处理。
      */
+    while(*str_1 != '\0')
+    {
+        str_1++;
+    }
+    while(*str_2 != '\0')
+    {
+        *str_1 = *str_2;
+        str_1 ++;
+        str_2++;
+    }
+    *str_1 = '\0';
 
     // IMPLEMENT YOUR CODE HERE
 }
-
 
 // 练习3，实现库函数strstr
 char* my_strstr(char *s, char *p) {
@@ -29,9 +48,43 @@ char* my_strstr(char *s, char *p) {
      * 例如：
      * s = "123456", p = "34"，应该返回指向字符'3'的指针。
      */
+    int B = 131;
+    int P = 1000000007;
+    int m = my_strlen(p);
+    long long hashs[my_strlen(s)+5];
+    hashs[0] = 0;
+    long long pow[my_strlen(s)+5];
+    pow[0] = 1;
+    int cnt = 1;
+    char* a = p;
+    char* b = s;
+    long long hashp = 0;
+    while(*a != '\0')
+    {
+        hashp = (hashp*B%P + int(*a))%P;
+        a++;
+    }
+    while (*b != '\0')
+    {
+        hashs[cnt] = (hashs[cnt-1]*B%P + int(*b))%P; 
+        pow[cnt] = pow[cnt-1]*B%P;
+        b++;
+        cnt++;
+    }
+    b = s;
+    cnt = 1;
+    while (*b != '\0')
+    {
+        if(((hashs[cnt + m -1] - hashs[cnt-1] * pow[m] % P) % P + P) % P == hashp)
+        {
+            return b;
+        }
+        cnt++;b++;
+        if(*b == '\0')
+          return NULL;
+    }
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
 }
 
 
@@ -94,12 +147,38 @@ void rgb2gray(float *in, float *out, int h, int w) {
      * (1) for循环的使用。
      * (2) 内存的访问。
      */
-
+        for(int i = 1 ; i <= h ; i++)
+        {
+            for(int j = 1 ; j <= w ; j++)
+            {
+                *out = *in * 0.2989 + *(in + 1) * 0.5870 + *(in + 2) * 0.1140;
+                out++;
+                in += 3;
+            } 
+        }
     // IMPLEMENT YOUR CODE HERE
     // ...
 }
-
+//  记 Dx = x2 - x1, Dy = y2 - y1, dx = x - x1, dy = y - y1，
+//      *
+//      *                     (Dx - dx)(Dy - dy)         dx(Dy - dy)
+//      *          Q = P1 * ———————————————————— + P2 * ————————————— +
+//      *                          Dx * Dy                 Dx * Dy
+//      *
+//      *                    (Dx - dx)dy           dxdy
+//      *              P3 * ————————————— + P4 * —————————
+//      *                      Dx * Dy            Dx * Dy
+// Q = P1 * (1 - dx)(1 - dy) + P2 * dx(1 - dy)
+//      *            + P3 * (1 - dx)dy + P4 * dxdy
 // 练习5，实现图像处理算法 resize：缩小或放大图像
+float cal_q(float* cur ,float dx,float dy ,int w , int c_bx,int c_by)
+{
+    float Q = *cur * (1 - dx) * (1 - dy)   
+            + *(cur + 3 + c_bx * 3) * dx * (1 - dy)
+            + *(cur + (w*3 + c_by * w * 3 )) * (1 - dx) * dy
+            + *(cur + w * 3 + 3 + c_bx * 3 + c_by* w * 3) * dx * dy;
+    return Q;
+}
 void resize(float *in, float *out, int h, int w, int c, float scale) {
     /**
      * 图像处理知识：
@@ -198,9 +277,43 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
 
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
+    for(int i = 1 ; i <= new_h ; i++)
+    {
+        for(int j = 1 ; j <= new_w ; j++)
+        {
+            
+            float src_x = float(j) * (1.0f / scale) + 0.5f * ((1.0f / scale) -1.0f);
+            float src_y = float(i) * (1.0f / scale) + 0.5f * ((1.0f / scale) -1.0f);
+            int x1 = static_cast<int>(src_x);
+            int y1 = static_cast<int>(src_y);
+            float dx = src_x - x1;
+            float dy = src_y - y1;
+            float* cur = (in + w * (y1 - 1) *3 + x1 * 3);
+            int call_backx = 0,call_backy = 0;
+            if(x1 + 1> w) call_backx = -1;
+            if(y1 + 1> h) call_backy = -1;
+            for(int k = 1 ;k <= 3;k ++)
+            {
+                *out = cal_q(cur,dx,dy,w,call_backx,call_backy);
+                out++;cur++;
+            }
+        }
+    }
+    
 
 }
-
+// *out = *cur * (1 - dx) * (1 - dy)   
+            //        + *(cur + 3 + call_backx * 3) * dx * (1 - dy)
+            //        + *(cur + (w*3 + call_backy * w * 3 )) * (1 - dx) * dy
+            //        + *(cur + w * 3 + 3 + call_backx * 3 + call_backy * w * 3) * dx * dy;
+            // out++;
+            // cur++;
+            // *out = *cur * (1 - dx) * (1 - dy)   
+            //        + *(cur + 3 + call_backx * 3) * dx * (1 - dy)
+            //        + *(cur + (w*3 + call_backy * w * 3 )) * (1 - dx) * dy
+            //        + *(cur + w * 3 + 3 + call_backx * 3 + call_backy * w * 3) * dx * dy;
+            // out++;
+            // cur++;
 
 // 练习6，实现图像处理算法：直方图均衡化
 void hist_eq(float *in, int h, int w) {
@@ -219,6 +332,30 @@ void hist_eq(float *in, int h, int w) {
      * (2) 灰度级个数为256，也就是{0, 1, 2, 3, ..., 255}
      * (3) 使用数组来实现灰度级 => 灰度级的映射
      */
+    float g[257];
+    float *a = in;
+    memset(g,0,sizeof(g));
+    for(int i = 1 ; i <= h ; i++)
+    {
+        for(int j = 1 ; j <= w ; j++)
+        {
+            g[int(*a + 0.5)]++;
+            a++;
+
+        }
+    }
+    for(int i = 1 ; i<= 255 ; i++)
+    {
+        g[i] += g[i-1];
+    }
+    for(int i = 1 ; i <= h ; i++)
+    {
+        for(int j = 1 ; j <= w ; j++)
+        {
+            *in = g[int(*in + 0.5)] /(h * w) * 255;
+            in++;
+        }
+    }
 
     // IMPLEMENT YOUR CODE HERE
 }
