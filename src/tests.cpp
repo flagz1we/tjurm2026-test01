@@ -80,9 +80,9 @@ char* my_strstr(char *s, char *p) {
             return b;
         }
         cnt++;b++;
-        if(*b == '\0')
-          return NULL;
+        
     }
+    return NULL;
 
     // IMPLEMENT YOUR CODE HERE
 }
@@ -294,8 +294,8 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
             if(y1 + 1> h) call_backy = -1;
             for(int k = 1 ;k <= 3;k ++)
             {
-                *out = cal_q(cur,dx,dy,w,call_backx,call_backy);
-                out++;cur++;
+                *out = cal_q(cur, dx, dy, w, call_backx, call_backy);
+                out++; cur++;
             }
         }
     }
@@ -334,14 +334,13 @@ void hist_eq(float *in, int h, int w) {
      */
     float g[257];
     float *a = in;
-    memset(g,0,sizeof(g));
+    memset(g ,0 ,sizeof(g));
     for(int i = 1 ; i <= h ; i++)
     {
         for(int j = 1 ; j <= w ; j++)
         {
             g[int(*a + 0.5)]++;
             a++;
-
         }
     }
     for(int i = 1 ; i<= 255 ; i++)
